@@ -1,9 +1,9 @@
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.security.websocket import AllowedHostsOriginValidator, OriginValidator
+from channels.security.websocket import AllowedHostsOriginValidator
 from django.conf.urls import url
 
-from src.chat.consumers import ChatConsumer
+from chat.consumers import ChatConsumer
 
 application = ProtocolTypeRouter({
     'websocket': AllowedHostsOriginValidator(
