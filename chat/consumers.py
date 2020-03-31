@@ -9,13 +9,22 @@ from chat.models import Thread
 class ChatConsumer(AsyncConsumer):
     async def websocket_connect(self, event):
         print('connected', event)
-        await self.send({
-            'type': 'websocket.accept'
-        })
         other_user = self.scope['url_route']['kwargs']['username']
         me = self.scope['user']
         thread_obj = await self.get_thread(me, other_user)
         # await asyncio.sleep(10)
+        chat_room = f'thread_{thread_obj.id}'
+        self.chat_room = chat_room
+
+        # Creating chat_room via redis
+        await self.channel_layer.group_add(
+            chat_room,
+            self.channel_name
+        )
+
+        await self.send({
+            'type': 'websocket.accept'
+        })
 
     async def websocket_receive(self, event):
         print('receive', event)
@@ -23,20 +32,31 @@ class ChatConsumer(AsyncConsumer):
         if front_text is not None:
             loaded_dict_data = json.loads(front_text)
             msg = loaded_dict_data.get('message')
-            print(msg)
             user = self.scope['user']
             username = 'default'
-
             if user.is_authenticated:
                 username = user.username
             my_response = {
                 'message': msg,
                 'username': username
             }
-            await self.send({
-                'type': 'websocket.send',
-                'text': json.dumps(my_response)
-            })
+
+            # Sending to chat_room via redis
+            # Broadcasts the message event to be sent
+            await self.channel_layer.group_send(
+                self.chat_room,
+                {
+                    'type': 'chat_message',
+                    'text': json.dumps(my_response)
+                }
+            )
+
+    async def chat_message(self, event):
+        # Send the actual message
+        await self.send({
+            'type': 'websocket.send',
+            'text': event['text']
+        })
 
     async def websocket_disconnect(self, event):
         print('disconnected', event)
