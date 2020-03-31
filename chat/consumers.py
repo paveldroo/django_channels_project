@@ -26,6 +26,7 @@ class ChatConsumer(AsyncConsumer):
             print(msg)
             user = self.scope['user']
             username = 'default'
+
             if user.is_authenticated:
                 username = user.username
             my_response = {
