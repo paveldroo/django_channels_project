@@ -19,27 +19,39 @@
 
 {% block script %}
 
-<script>
-let loc = window.location;
+    <script>
+        let loc = window.location;
+        let formData = $("#form");
+        let msgInput = $("#id_message");
 
-let wsStart = 'ws://';
-if (loc.protocol === 'https:') {
-    wsStart = 'wss://'
-}
-let endpoint = wsStart  + loc.host + loc.pathname;
-let socket = new WebSocket(endpoint);
+        let wsStart = 'ws://';
+        if (loc.protocol === 'https:') {
+            wsStart = 'wss://'
+        }
+        let endpoint = wsStart + loc.host + loc.pathname;
+        let socket = new WebSocket(endpoint);
 
-socket.onmessage = function(e) {
-    console.log('message', e)
-};
-socket.onopen = function(e) {
-    console.log('open', e)
-};
-socket.onerror = function(e) {
-    console.log('error', e)
-};
-socket.onclose = function(e) {
-    console.log('close', e)
-};
-</script>
+        socket.onmessage = function (e) {
+            console.log('message', e)
+        };
+        socket.onopen = function (e) {
+            console.log('open', e);
+            formData.submit(function (event) {
+                event.preventDefault();
+                let msgText = msgInput.val();
+                {#let formDataSerialized = formData.serialize();#}
+                let finalData = {
+                    'message': msgText
+                };
+                socket.send(JSON.stringify(finalData));
+                formData.reset()
+            })
+        };
+        socket.onerror = function (e) {
+            console.log('error', e)
+        };
+        socket.onclose = function (e) {
+            console.log('close', e)
+        };
+    </script>
 {% endblock %}
